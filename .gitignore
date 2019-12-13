@@ -1,7 +1,12 @@
+tacotron2/
+tacotron2/*
 dataset
 checkpoints
 logs
+outputs
+outputs*/*
 dataset/*
 checkpoints/*
 logs/*
 *.pyc
+*.log
