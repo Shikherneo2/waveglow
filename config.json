@@ -8,17 +8,18 @@
         "iters_per_checkpoint": 2500,
         "batch_size": 3,
         "seed": 1234,
-        "checkpoint_path": "/home/sdevgupta/mine/waveglow/checkpoints/waveglow_285000",
+        "checkpoint_path": "/home/sdevgupta/mine/models/waveglow_256channels_v4_melotron.pt",
 		"with_tensorboard": true,
-		"start_from": 257500
+		"start_from": 400000
     },
     "data_config": {
         "training_files": "dataset/train_files.txt",
-        "segment_length": 16000,
-        "sampling_rate": 16000,
-        "filter_length": 800,
-        "hop_length": 200,
-        "win_length": 800,
+		// multiple of hop_length
+		"segment_length": 23040,
+        "sampling_rate": 22050,
+        "filter_length": 1024,
+        "hop_length": 256,
+        "win_length": 1024,
         "mel_fmin": 0.0,
 		"mel_fmax": 8000.0
     },

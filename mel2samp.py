@@ -65,6 +65,13 @@ class Mel2Samp(torch.utils.data.Dataset):
 	def __init__(self, training_files, segment_length, filter_length,
 				 hop_length, win_length, sampling_rate, mel_fmin, mel_fmax):
 		self.audio_files = files_to_list(training_files)
+		
+		# Fix to remove files smaller than sample length
+		for file in self.audio_files:
+			audio_data, sample_r = load_wav_to_torch(file, sampling_rate)
+			if audio_data.size(0) < segment_length:
+				self.audio_files.remove(file)
+
 		random.seed(1234)
 		random.shuffle(self.audio_files)
 		self.stft = TacotronSTFT(filter_length=filter_length,
@@ -95,9 +102,19 @@ class Mel2Samp(torch.utils.data.Dataset):
 
 		# Take segment
 		if audio.size(0) >= self.segment_length:
-			max_audio_start = audio.size(0) - self.segment_length
-			audio_start = random.randint(0, max_audio_start)
-			audio = audio[audio_start:audio_start+self.segment_length]
+			# --- Take the segment portion that is not completely silent
+			# max_audio_start = audio.size(0) - self.segment_length
+			# audio_start = random.randint(0, max_audio_start)
+			# audio = audio[audio_start:audio_start+self.segment_length]
+			audio_std = 0
+			tries = 20
+			while (audio_std*MAX_WAV_VALUE) < 1e-5 and tries>0:
+				max_audio_start = audio.size(0) - self.segment_length
+				audio_start = random.randint(0, max_audio_start)
+				segment = audio[audio_start:audio_start+self.segment_length]
+				audio_std = segment.std()
+				tries -= 1
+			audio = segment
 		else:
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
 

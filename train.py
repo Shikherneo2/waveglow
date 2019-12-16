@@ -179,7 +179,14 @@ if __name__ == "__main__":
 	global dist_config
 	dist_config = config["dist_config"]
 	global waveglow_config
-	waveglow_config = config["waveglow_config"]
+	
+	# per commit https://github.com/NVIDIA/waveglow/pull/88/files#diff-2b3c4fcf550a15d7b23db0a2614c4a95R185
+	# waveglow_config = config["waveglow_config"]
+	waveglow_config = { 
+        **config["waveglow_config"], 
+        'win_length': data_config['win_length'],
+        'hop_length': data_config['hop_length']
+    }
 
 	num_gpus = torch.cuda.device_count()
 	if num_gpus > 1:
