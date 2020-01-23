@@ -53,7 +53,6 @@ def load_wav_to_torch(full_path, sampling_rate_param):
 	Loads wavdata into torch array
 	"""
 	data, sampling_rate = librosa.core.load( full_path, sr=sampling_rate_param )
-	# data = np.round(data*32767).astype(np.int16)
 	return torch.from_numpy(data).float(), sampling_rate
 
 
@@ -67,10 +66,10 @@ class Mel2Samp(torch.utils.data.Dataset):
 		self.audio_files = files_to_list(training_files)
 		
 		# Fix to remove files smaller than sample length
-		for file in self.audio_files:
-			audio_data, sample_r = load_wav_to_torch(file, sampling_rate)
-			if audio_data.size(0) < segment_length:
-				self.audio_files.remove(file)
+		# for file in self.audio_files:
+		# 	audio_data, sample_r = load_wav_to_torch(file, sampling_rate)
+		# 	if audio_data.size(0) < segment_length:
+		# 		self.audio_files.remove(file)
 
 		random.seed(1234)
 		random.shuffle(self.audio_files)
@@ -102,19 +101,20 @@ class Mel2Samp(torch.utils.data.Dataset):
 
 		# Take segment
 		if audio.size(0) >= self.segment_length:
+			max_audio_start = audio.size(0) - self.segment_length
+			audio_start = random.randint(0, max_audio_start)
+			audio = audio[audio_start:audio_start+self.segment_length]
+			
 			# --- Take the segment portion that is not completely silent
-			# max_audio_start = audio.size(0) - self.segment_length
-			# audio_start = random.randint(0, max_audio_start)
-			# audio = audio[audio_start:audio_start+self.segment_length]
-			audio_std = 0
-			tries = 20
-			while (audio_std*MAX_WAV_VALUE) < 1e-5 and tries>0:
-				max_audio_start = audio.size(0) - self.segment_length
-				audio_start = random.randint(0, max_audio_start)
-				segment = audio[audio_start:audio_start+self.segment_length]
-				audio_std = segment.std()
-				tries -= 1
-			audio = segment
+			# audio_std = 0
+			# tries = 20
+			# while (audio_std*MAX_WAV_VALUE) < 1e-5 and tries>0:
+			# 	max_audio_start = audio.size(0) - self.segment_length
+			# 	audio_start = random.randint(0, max_audio_start)
+			# 	segment = audio[audio_start:audio_start+self.segment_length]
+			# 	audio_std = segment.std()
+			# 	tries -= 1
+			# audio = segment
 		else:
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
 
@@ -138,6 +138,8 @@ if __name__ == "__main__":
 						help='JSON file for configuration')
 	parser.add_argument('-o', '--output_dir', type=str,
 						help='Output directory')
+	parser.add_argument('-s', '--sample_rate', type=int,
+						help='sample rate')
 	args = parser.parse_args()
 
 	with open(args.config) as f:
@@ -153,10 +155,11 @@ if __name__ == "__main__":
 		os.chmod(args.output_dir, 0o775)
 
 	for filepath in filepaths:
-		audio, sr = load_wav_to_torch(filepath, sampling_rate_param=16000)
+		audio, sr = load_wav_to_torch(filepath, sampling_rate_param=args.sample_rate)
 		
 		melspectrogram = mel2samp.get_mel(audio)
 		filename = os.path.basename(filepath)
-		new_filepath = args.output_dir + '/' + filename + '.pt'
+		new_filepath = args.output_dir + '/' + filename + '.npy'
 		print(new_filepath)
-		torch.save(melspectrogram, new_filepath)
+		# torch.save(melspectrogram, new_filepath)
+		np.save( new_filepath, melspectrogram.numpy() )

@@ -6,7 +6,7 @@ logs
 outputs
 outputs*/*
 dataset/*
-checkpoints/*
+checkpoints*/*
 logs/*
 *.pyc
 *.log

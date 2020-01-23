@@ -48,14 +48,6 @@ def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
 
 	for i, file_path in enumerate(mel_files):
 		file_name = os.path.splitext(os.path.basename(file_path))[0]
-		# if( file_path.split(".")[-1]=="np" or file_path.split(".")[-1]=="npy" ):
-		# 	mel = np.load(file_path)	
-		# else:
-		# 	mel = torch.load(file_path)
-		# if( type(mel).__module__=="numpy" ):
-		# 	if( mel.shape[0]!=80 ):
-		# 		mel = mel.T
-		# 	mel = torch.from_numpy(mel)
 		try:
 			mel = torch.load(file_path)
 			if( type(mel).__module__=="numpy" ):
@@ -72,11 +64,12 @@ def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
 		with torch.no_grad():
 			audio = waveglow.infer(mel, sigma=sigma)
 			if denoiser_strength > 0:
-				audio = denoiser(audio, denoiser_strength)
+				audio = denoiser(torch.autograd.Variable(mel.cuda()), denoiser_strength)
 			audio = audio * MAX_WAV_VALUE
 
 		audio = audio.squeeze()
-		audio = audio.cpu().numpy().astype(np.int16)
+		audio = audio.cpu().numpy()
+		audio = audio.astype('int16')
 		audio_path = os.path.join(
 			output_dir, "{}_synthesis.wav".format(file_name))
 		write(audio_path, sampling_rate, audio)
@@ -91,10 +84,10 @@ if __name__ == "__main__":
 	parser.add_argument('-w', '--waveglow_path',
 						help='Path to waveglow decoder checkpoint with model')
 	parser.add_argument('-o', "--output_dir", required=True)
-	parser.add_argument("-s", "--sigma", default=1, type=float)
-	parser.add_argument("--sampling_rate", default=16000, type=int)
+	parser.add_argument("-s", "--sigma", default=0.8, type=float)
+	parser.add_argument("--sampling_rate", default=22050, type=int)
 	parser.add_argument("--is_fp16", action="store_true")
-	parser.add_argument("-d", "--denoiser_strength", default=0.0, type=float,
+	parser.add_argument("-d", "--denoiser_strength", default=0, type=float,
 						help='Removes model bias. Start with 0.1 and adjust')
 
 	args = parser.parse_args()
