@@ -5,7 +5,7 @@
         "epochs": 100,
         "learning_rate": 1e-4,
         "sigma": 1.0,
-        "iters_per_checkpoint": 3000,
+        "iters_per_checkpoint": 2500,
         "batch_size": 3,
         "seed": 1234,
 		"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints/waveglow_705000",

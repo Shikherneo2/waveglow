@@ -102,10 +102,12 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	# =====START: ADDED FOR DISTRIBUTED======
 	train_sampler = DistributedSampler(trainset) if num_gpus > 1 else None
 	# =====END:   ADDED FOR DISTRIBUTED======
-	train_loader = DataLoader(trainset, num_workers=0, shuffle=False,
+	train_loader = DataLoader(trainset, 
+							  num_workers=2, 
+							  shuffle=True,
 							  sampler=train_sampler,
 							  batch_size=batch_size,
-							  pin_memory=False,
+							  pin_memory=True,
 							  drop_last=True)
 
 	# Get shared output_directory ready
@@ -122,7 +124,7 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	model.train()
 	epoch_offset = max(0, int(iteration / len(train_loader)))
 	# ================ MAIN TRAINNIG LOOP! ===================
-	for epoch in range(epoch_offset, epochs):
+	for epoch in range(epoch_offset, epoch_offset+epochs):
 		print("Epoch: {}".format(epoch))
 		for i, batch in enumerate(train_loader):
 			model.zero_grad()
@@ -146,7 +148,9 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 
 			optimizer.step()
 
-			print("{}:\t{:.9f}".format(iteration, reduced_loss))
+			if iteration % 100 == 0:
+				print("{}:\t{:.9f}".format(iteration, reduced_loss))
+
 			if with_tensorboard and rank == 0:
 				logger.add_scalar('training_loss', reduced_loss, i + len(train_loader) * epoch)
 
