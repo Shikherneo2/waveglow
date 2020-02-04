@@ -181,6 +181,9 @@ if __name__ == '__main__':
 	parser.add_argument(
 		'-a', '--args_str', type=str, default='',
 		help='double quoted string with space separated key value pairs')
+	parser.add_argument('-o', '--output_dir', type=str )
+	parser.add_argument('-p', '--checkpoint_path', type=str )
+	parser.add_argument('-i', '--start_from', type=int )
 
 	args = parser.parse_args()
 	main(args.config, args.stdout_dir, args.args_str)

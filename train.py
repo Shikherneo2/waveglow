@@ -176,9 +176,11 @@ if __name__ == "__main__":
 						help='rank of process for distributed' )
 	parser.add_argument('-g', '--group_name', type=str, default='',
 						help='name of group for distributed' )
+	
 	parser.add_argument('-o', '--output_dir', type=str )
 	parser.add_argument('-p', '--checkpoint_path', type=str )
-	parser.add_argument('-s', '--start_from', type=str )
+	parser.add_argument('-i', '--start_from', type=int )
+	
 	args = parser.parse_args()
 
 	# Parse configs.  Globals nicer in this case
@@ -193,7 +195,7 @@ if __name__ == "__main__":
 		train_config["checkpoint_path"] = args.checkpoint_path
 	if(args.start_from):
 		train_config["start_from"] = args.start_from
-		
+	
 	global data_config
 	data_config = config["data_config"]
 	global dist_config
