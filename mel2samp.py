@@ -34,6 +34,8 @@ import argparse
 import numpy as np
 import torch.utils.data
 
+import speech_utils
+
 from tacotron2_layers import TacotronSTFT
 
 MAX_WAV_VALUE = 32768.0
@@ -65,6 +67,15 @@ class Mel2Samp(torch.utils.data.Dataset):
 				 hop_length, win_length, sampling_rate, mel_fmin, mel_fmax):
 		self.audio_files = files_to_list(training_files)
 		
+		self.mel_basis_p = librosa.filters.mel(
+          sr=sampling_rate,
+          n_fft=1024,
+          n_mels=80,
+          htk=True,
+          norm=None,
+          fmax=None
+      )
+
 		# Fix to remove files smaller than sample length
 		# for file in self.audio_files:
 		# 	audio_data, sample_r = load_wav_to_torch(file, sampling_rate)
@@ -81,7 +92,23 @@ class Mel2Samp(torch.utils.data.Dataset):
 		self.segment_length = segment_length
 		self.sampling_rate = sampling_rate
 
+	# Get mel in OpenSeq2Seq format
 	def get_mel(self, audio):
+		return torch.squeeze(torch.from_numpy(speech_utils.get_speech_features( 
+								audio,
+								self.sampling_rate,
+								80, 
+								features_type="mel",
+								n_fft=1024,
+								hop_length=256,
+								mag_power=1,
+								feature_normalize=False,
+								mean=0.,
+								std=1.,
+								data_min=1e-5,
+								mel_basis=self.mel_basis_p).T))
+
+	def get_mel_waveglow(self, audio):
 		audio_norm = audio 
 		# audio_norm = audio / MAX_WAV_VALUE
 
@@ -118,7 +145,7 @@ class Mel2Samp(torch.utils.data.Dataset):
 		else:
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
 
-		mel = self.get_mel(audio)
+		mel = self.get_mel(audio.numpy())
 		# audio = audio / MAX_WAV_VALUE
 
 		return (mel, audio)

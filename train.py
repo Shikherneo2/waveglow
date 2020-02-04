@@ -27,6 +27,7 @@
 import argparse
 import json
 import os
+import time
 import torch
 
 #=====START: ADDED FOR DISTRIBUTED======
@@ -101,10 +102,11 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	trainset = Mel2Samp(**data_config)
 	# =====START: ADDED FOR DISTRIBUTED======
 	train_sampler = DistributedSampler(trainset) if num_gpus > 1 else None
+	shuffle_param = False if num_gpus>1 else True
 	# =====END:   ADDED FOR DISTRIBUTED======
 	train_loader = DataLoader(trainset, 
-							  num_workers=2, 
-							  shuffle=True,
+							  num_workers=3, 
+							  shuffle=shuffle_param,
 							  sampler=train_sampler,
 							  batch_size=batch_size,
 							  pin_memory=True,
@@ -126,6 +128,8 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	# ================ MAIN TRAINNIG LOOP! ===================
 	for epoch in range(epoch_offset, epoch_offset+epochs):
 		print("Epoch: {}".format(epoch))
+		start = time.time()
+
 		for i, batch in enumerate(train_loader):
 			model.zero_grad()
 
@@ -148,8 +152,9 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 
 			optimizer.step()
 
-			if iteration % 100 == 0:
-				print("{}:\t{:.9f}".format(iteration, reduced_loss))
+			if iteration % 500 == 0 and rank==0:
+				print("{}:\t{:.9f}".format(iteration, reduced_loss), flush=True)
+				print("Speed: " + str( i / (time.time() - start) ), flush=True)
 
 			if with_tensorboard and rank == 0:
 				logger.add_scalar('training_loss', reduced_loss, i + len(train_loader) * epoch)
@@ -166,11 +171,14 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-c', '--config', type=str,
-						help='JSON file for configuration')
+						help='JSON file for configuration' )
 	parser.add_argument('-r', '--rank', type=int, default=0,
-						help='rank of process for distributed')
+						help='rank of process for distributed' )
 	parser.add_argument('-g', '--group_name', type=str, default='',
-						help='name of group for distributed')
+						help='name of group for distributed' )
+	parser.add_argument('-o', '--output_dir', type=str )
+	parser.add_argument('-p', '--checkpoint_path', type=str )
+	parser.add_argument('-s', '--start_from', type=str )
 	args = parser.parse_args()
 
 	# Parse configs.  Globals nicer in this case
@@ -178,6 +186,14 @@ if __name__ == "__main__":
 		data = f.read()
 	config = json.loads(data)
 	train_config = config["train_config"]
+	
+	if( args.output_dir ):
+		train_config["output_directory"] = args.output_dir
+	if( args.checkpoint_path ):
+		train_config["checkpoint_path"] = args.checkpoint_path
+	if(args.start_from):
+		train_config["start_from"] = args.start_from
+		
 	global data_config
 	data_config = config["data_config"]
 	global dist_config

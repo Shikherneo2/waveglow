@@ -1,20 +1,20 @@
 {
     "train_config": {
         "fp16_run": true,
-        "output_directory": "checkpoints2",
+        "output_directory": "checkpoints_melotron",
         "epochs": 100,
         "learning_rate": 1e-4,
         "sigma": 1.0,
-        "iters_per_checkpoint": 2500,
-        "batch_size": 3,
+        "iters_per_checkpoint": 5000,
+        "batch_size": 6,
         "seed": 1234,
-		"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints/waveglow_705000",
+		"checkpoint_path":"/home/sdevgupta/mine/models/melotron_converted.pt",
 		"with_tensorboard": true,
-		"start_from": 705000
+		"start_from": 450000
     },
     "data_config": {
         "training_files": "dataset/train_filtered.txt",
-		"segment_length": 22272,
+		"segment_length": 16000,
         "sampling_rate": 22050,
         "filter_length": 1024,
         "hop_length": 256,
