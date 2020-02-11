@@ -66,15 +66,15 @@ class Mel2Samp(torch.utils.data.Dataset):
 	def __init__(self, training_files, segment_length, filter_length,
 				 hop_length, win_length, sampling_rate, mel_fmin, mel_fmax):
 		self.audio_files = files_to_list(training_files)
-		
-		self.mel_basis_p = librosa.filters.mel(
-          sr=sampling_rate,
-          n_fft=1024,
-          n_mels=80,
-          htk=True,
-          norm=None,
-          fmax=None
-      )
+		self.mel_segment_length = 63
+	       #  self.mel_basis_p = librosa.filters.mel(
+          # sr=sampling_rate,
+          # n_fft=1024,
+          # n_mels=80,
+          # htk=True,
+          # norm=None,
+          # fmax=None
+      # )
 
 		# Fix to remove files smaller than sample length
 		# for file in self.audio_files:
@@ -84,29 +84,29 @@ class Mel2Samp(torch.utils.data.Dataset):
 
 		random.seed(1234)
 		random.shuffle(self.audio_files)
-		self.stft = TacotronSTFT(filter_length=filter_length,
-								 hop_length=hop_length,
-								 win_length=win_length,
-								 sampling_rate=sampling_rate,
-								 mel_fmin=mel_fmin, mel_fmax=mel_fmax)
+	       #  self.stft = TacotronSTFT(filter_length=filter_length,
+								 # hop_length=hop_length,
+								 # win_length=win_length,
+								 # sampling_rate=sampling_rate,
+							 #         mel_fmin=mel_fmin, mel_fmax=mel_fmax)
 		self.segment_length = segment_length
 		self.sampling_rate = sampling_rate
 
 	# Get mel in OpenSeq2Seq format
 	def get_mel(self, audio):
-		return torch.squeeze(torch.from_numpy(speech_utils.get_speech_features( 
-								audio,
-								self.sampling_rate,
-								80, 
-								features_type="mel",
-								n_fft=1024,
-								hop_length=256,
-								mag_power=1,
-								feature_normalize=False,
-								mean=0.,
-								std=1.,
-								data_min=1e-5,
-								mel_basis=self.mel_basis_p).T))
+                return speech_utils.get_speech_features( 
+														audio,
+														self.sampling_rate,
+														80, 
+														features_type="mel",
+														n_fft=1024,
+														hop_length=256,
+														mag_power=1,
+														feature_normalize=False,
+														mean=0.,
+														std=1.,
+														data_min=1e-5,
+														mel_basis=self.mel_basis_p).T
 
 	def get_mel_waveglow(self, audio):
 		audio_norm = audio 
@@ -122,6 +122,7 @@ class Mel2Samp(torch.utils.data.Dataset):
 		# Read audio
 		filename = self.audio_files[index]
 		audio, sampling_rate = load_wav_to_torch(filename, self.sampling_rate)
+		mel = np.load("/home/sdevgupta/mine/OpenSeq2Seq/logs3/mels"+"_".join(filename.split("/")[-2:]).replace(".wav",".npy")).T
 		if sampling_rate != self.sampling_rate:
 			raise ValueError("{} SR doesn't match target {} SR".format(
 				sampling_rate, self.sampling_rate))
@@ -131,7 +132,16 @@ class Mel2Samp(torch.utils.data.Dataset):
 			max_audio_start = audio.size(0) - self.segment_length
 			audio_start = random.randint(0, max_audio_start)
 			audio = audio[audio_start:audio_start+self.segment_length]
+			mel_start = max( int(audio_start/256), 0 )
 			
+			if( mel.shape[1]<self.mel_segment_length ):
+				mel_length = mel.shape[1]
+				mel = torch.nn.functional.pad( torch.from_numpy( mel ), (0, self.mel_segment_length-mel_length), "constant", value=-11.5129 ).data
+			else:
+				if( mel_start+self.mel_segment_length > mel.shape[1] ):
+					mel = torch.from_numpy( mel[:,mel.shape[1]-self.mel_segment_length:] )
+				else:
+					mel = torch.from_numpy( mel[:,mel_start:mel_start+self.mel_segment_length] )
 			# --- Take the segment portion that is not completely silent
 			# audio_std = 0
 			# tries = 20
@@ -144,8 +154,14 @@ class Mel2Samp(torch.utils.data.Dataset):
 			# audio = segment
 		else:
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
-
-		mel = self.get_mel(audio.numpy())
+			mel_length = mel.shape[1]
+			# pad mel with log(data_min) which is log(1e-5)
+			mel = torch.nn.functional.pad( torch.from_numpy( mel ), (0, self.mel_segment_length-mel_length), "constant", value=-11.5129 ).data
+			
+			# mel3 = np.zeros((80,self.mel_segment_length), dtype=np.float32)
+			# mel3[:,mel.shape[1]] = mel
+			# mel = mel3
+		#mel = self.get_mel(audio.numpy())
 		# audio = audio / MAX_WAV_VALUE
 
 		return (mel, audio)

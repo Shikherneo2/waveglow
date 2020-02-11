@@ -43,7 +43,7 @@ def load_checkpoint(checkpoint_path, model, optimizer, start_from_iter):
 	assert os.path.isfile(checkpoint_path)
 	checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
 	# print(checkpoint_dict.keys())
-	if( "optimizer" in checkpoint_dict.keys() ):
+	if( "optimizer" not in checkpoint_dict.keys() ):
 		optimizer.load_state_dict(checkpoint_dict['optimizer'])
 	
 	if( "iteration" in checkpoint_dict.keys() ):
@@ -95,8 +95,8 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	# Load checkpoint if one exists
 	iteration = 0
 	if checkpoint_path != "":
-		model, optimizer, iteration = load_checkpoint(checkpoint_path, model,
-													  optimizer, start_from)
+		print( checkpoint_path  )
+		model, optimizer, iteration = load_checkpoint(checkpoint_path, model, optimizer, start_from)
 		iteration += 1  # next iteration is iteration + 1
 
 	trainset = Mel2Samp(**data_config)
@@ -152,7 +152,7 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 
 			optimizer.step()
 
-			if iteration % 500 == 0 and rank==0:
+			if iteration % 100 == 0 and rank==0:
 				print("{}:\t{:.9f}".format(iteration, reduced_loss), flush=True)
 				print("Speed: " + str( i / (time.time() - start) ), flush=True)
 
@@ -177,9 +177,9 @@ if __name__ == "__main__":
 	parser.add_argument('-g', '--group_name', type=str, default='',
 						help='name of group for distributed' )
 	
-	parser.add_argument('-o', '--output_dir', type=str )
-	parser.add_argument('-p', '--checkpoint_path', type=str )
-	parser.add_argument('-i', '--start_from', type=int )
+	# parser.add_argument('-o', '--output_dir', type=str )
+	# parser.add_argument('-p', '--checkpoint_path', type=str )
+	# parser.add_argument('-i', '--start_from', type=int )
 	
 	args = parser.parse_args()
 
@@ -189,12 +189,12 @@ if __name__ == "__main__":
 	config = json.loads(data)
 	train_config = config["train_config"]
 	
-	if( args.output_dir ):
-		train_config["output_directory"] = args.output_dir
-	if( args.checkpoint_path ):
-		train_config["checkpoint_path"] = args.checkpoint_path
-	if(args.start_from):
-		train_config["start_from"] = args.start_from
+	# if( args.output_dir ):
+		# train_config["output_directory"] = args.output_dir
+	# if( args.checkpoint_path ):
+		# train_config["checkpoint_path"] = args.checkpoint_path
+	# if(args.start_from):
+		# train_config["start_from"] = args.start_from
 	
 	global data_config
 	data_config = config["data_config"]

@@ -53,6 +53,7 @@ def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
 			if( type(mel).__module__=="numpy" ):
 				mel = torch.from_numpy(mel)
 		except:
+			print("Logging")
 			mel = np.load(file_path, allow_pickle=True).astype(np.float32)
 			mel = torch.from_numpy(mel)
 		if( mel.shape[0]!=80 ):
