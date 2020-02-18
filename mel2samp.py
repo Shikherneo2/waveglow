@@ -122,49 +122,28 @@ class Mel2Samp(torch.utils.data.Dataset):
 		# Read audio
 		filename = self.audio_files[index]
 		audio, sampling_rate = load_wav_to_torch(filename, self.sampling_rate)
-		mel = np.load("/home/sdevgupta/mine/OpenSeq2Seq/logs3/mels"+"_".join(filename.split("/")[-2:]).replace(".wav",".npy")).T
+		mel = np.load( "/home/sdevgupta/mine/OpenSeq2Seq/logs_gta/mels/" + "_".join(filename.split("/")[-2:]).replace(".wav",".npy") ).T
 		if sampling_rate != self.sampling_rate:
 			raise ValueError("{} SR doesn't match target {} SR".format(
 				sampling_rate, self.sampling_rate))
 
 		# Take segment
-		if audio.size(0) >= self.segment_length:
-			max_audio_start = audio.size(0) - self.segment_length
-			audio_start = random.randint(0, max_audio_start)
-			audio = audio[audio_start:audio_start+self.segment_length]
-			mel_start = max( int(audio_start/256), 0 )
-			
-			if( mel.shape[1]<self.mel_segment_length ):
-				mel_length = mel.shape[1]
-				mel = torch.nn.functional.pad( torch.from_numpy( mel ), (0, self.mel_segment_length-mel_length), "constant", value=-11.5129 ).data
-			else:
-				if( mel_start+self.mel_segment_length > mel.shape[1] ):
-					mel = torch.from_numpy( mel[:,mel.shape[1]-self.mel_segment_length:] )
-				else:
-					mel = torch.from_numpy( mel[:,mel_start:mel_start+self.mel_segment_length] )
-			# --- Take the segment portion that is not completely silent
-			# audio_std = 0
-			# tries = 20
-			# while (audio_std*MAX_WAV_VALUE) < 1e-5 and tries>0:
-			# 	max_audio_start = audio.size(0) - self.segment_length
-			# 	audio_start = random.randint(0, max_audio_start)
-			# 	segment = audio[audio_start:audio_start+self.segment_length]
-			# 	audio_std = segment.std()
-			# 	tries -= 1
-			# audio = segment
+		mel_length = mel.shape[1]
+		if mel_length >= self.mel_segment_length:
+			max_mel_start = max(0, mel_length - self.mel_segment_length-1)
+			mel_start = random.randint(0, max_mel_start)
+			mel = torch.from_numpy(mel[ :,mel_start:mel_start+self.mel_segment_length ])
+
+			audio_start = mel_start*256
+			audio_end = audio_start + self.segment_length
+			audio = audio[ audio_start:audio_end ]
 		else:
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
-			mel_length = mel.shape[1]
-			# pad mel with log(data_min) which is log(1e-5)
-			mel = torch.nn.functional.pad( torch.from_numpy( mel ), (0, self.mel_segment_length-mel_length), "constant", value=-11.5129 ).data
-			
-			# mel3 = np.zeros((80,self.mel_segment_length), dtype=np.float32)
-			# mel3[:,mel.shape[1]] = mel
-			# mel = mel3
-		#mel = self.get_mel(audio.numpy())
-		# audio = audio / MAX_WAV_VALUE
+			mel = torch.from_numpy( mel )
+			mel = torch.nn.functional.pad(mel, (0, self.mel_segment_length - mel_length), 'constant').data
+			#########???????????????#######
 
-		return (mel, audio)
+		return ( mel, audio)
 
 	def __len__(self):
 		return len(self.audio_files)
