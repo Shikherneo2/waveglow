@@ -121,11 +121,11 @@ class Mel2Samp(torch.utils.data.Dataset):
 	def __getitem__(self, index):
 		# Read audio
 		filename = self.audio_files[index]
-		audio, sampling_rate = load_wav_to_torch(filename, self.sampling_rate)
-		mel = np.load( "/home/sdevgupta/mine/OpenSeq2Seq/logs_gta/mels/" + "_".join(filename.split("/")[-2:]).replace(".wav",".npy") ).T
-		if sampling_rate != self.sampling_rate:
-			raise ValueError("{} SR doesn't match target {} SR".format(
-				sampling_rate, self.sampling_rate))
+		audio = torch.from_numpy(np.load(filename.replace("mels","npy_wavs")))
+		mel = np.load(filename).T
+		#sampling_rate != self.sampling_rate:
+		#	raise ValueError("{} SR doesn't match target {} SR".format(
+		#		sampling_rate, self.sampling_rate))
 
 		# Take segment
 		mel_length = mel.shape[1]

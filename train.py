@@ -29,6 +29,7 @@ import json
 import os
 import time
 import torch
+from tensorboardX import SummaryWriter
 
 #=====START: ADDED FOR DISTRIBUTED======
 from distributed import init_distributed, apply_gradient_allreduce, reduce_tensor
@@ -105,7 +106,7 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 	shuffle_param = False if num_gpus>1 else True
 	# =====END:   ADDED FOR DISTRIBUTED======
 	train_loader = DataLoader(trainset, 
-							  num_workers=3, 
+							  num_workers=5,
 							  shuffle=shuffle_param,
 							  sampler=train_sampler,
 							  batch_size=batch_size,
@@ -120,7 +121,6 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 		print("output directory", output_directory)
 
 	if with_tensorboard and rank == 0:
-		from tensorboardX import SummaryWriter
 		logger = SummaryWriter(os.path.join(output_directory, 'logs'))
 
 	model.train()
@@ -152,12 +152,12 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 
 			optimizer.step()
 
-			if iteration % 100 == 0 and rank==0:
+			if iteration % 50== 0 and rank==0:
 				print("{}:\t{:.9f}".format(iteration, reduced_loss), flush=True)
 				print("Speed: " + str( i / (time.time() - start) ), flush=True)
 
-			if with_tensorboard and rank == 0:
-				logger.add_scalar('training_loss', reduced_loss, i + len(train_loader) * epoch)
+			#if with_tensorboard and rank == 0:
+			#	logger.add_scalar('training_loss', reduced_loss, i + len(train_loader) * epoch)
 
 			if (iteration % iters_per_checkpoint == 0):
 				if rank == 0:
