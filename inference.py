@@ -53,7 +53,7 @@ def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
 			if( type(mel).__module__=="numpy" ):
 				mel = torch.from_numpy(mel)
 		except:
-			print("Logging")
+			print("Generating")
 			mel = np.load(file_path, allow_pickle=True).astype(np.float32)
 			mel = torch.from_numpy(mel)
 		if( mel.shape[0]!=80 ):
@@ -86,10 +86,10 @@ if __name__ == "__main__":
 	parser.add_argument('-w', '--waveglow_path',
 						help='Path to waveglow decoder checkpoint with model')
 	parser.add_argument('-o', "--output_dir", required=True)
-	parser.add_argument("-s", "--sigma", default=0.6, type=float)
+	parser.add_argument("-s", "--sigma", default=0.8, type=float)
 	parser.add_argument("--sampling_rate", default=22050, type=int)
 	parser.add_argument("--is_fp16", action="store_true")
-	parser.add_argument("-d", "--denoiser_strength", default=0, type=float,
+	parser.add_argument("-d", "--denoiser_strength", default=0.1, type=float,
 						help='Removes model bias. Start with 0.1 and adjust')
 
 	args = parser.parse_args()

@@ -84,29 +84,29 @@ class Mel2Samp(torch.utils.data.Dataset):
 
 		random.seed(1234)
 		random.shuffle(self.audio_files)
-	       #  self.stft = TacotronSTFT(filter_length=filter_length,
-								 # hop_length=hop_length,
-								 # win_length=win_length,
-								 # sampling_rate=sampling_rate,
-							 #         mel_fmin=mel_fmin, mel_fmax=mel_fmax)
+		#  self.stft = TacotronSTFT(filter_length=filter_length,
+						# hop_length=hop_length,
+						# win_length=win_length,
+						# sampling_rate=sampling_rate,
+				    #	mel_fmin=mel_fmin, mel_fmax=mel_fmax)
 		self.segment_length = segment_length
 		self.sampling_rate = sampling_rate
 
 	# Get mel in OpenSeq2Seq format
 	def get_mel(self, audio):
-                return speech_utils.get_speech_features( 
-														audio,
-														self.sampling_rate,
-														80, 
-														features_type="mel",
-														n_fft=1024,
-														hop_length=256,
-														mag_power=1,
-														feature_normalize=False,
-														mean=0.,
-														std=1.,
-														data_min=1e-5,
-														mel_basis=self.mel_basis_p).T
+		return speech_utils.get_speech_features( 
+								audio,
+								self.sampling_rate,
+								80, 
+								features_type="mel",
+								n_fft=1024,
+								hop_length=256,
+								mag_power=1,
+								feature_normalize=False,
+								mean=0.,
+								std=1.,
+								data_min=1e-5,
+								mel_basis=self.mel_basis_p).T
 
 	def get_mel_waveglow(self, audio):
 		audio_norm = audio 
@@ -121,12 +121,9 @@ class Mel2Samp(torch.utils.data.Dataset):
 	def __getitem__(self, index):
 		# Read audio
 		filename = self.audio_files[index]
-		audio = torch.from_numpy(np.load(filename.replace("mels","npy_wavs")))
+		audio = torch.from_numpy(np.load( os.path.join("/home/sdevgupta/mine/data/npy_wavs", os.path.basename(filename)) ))
 		mel = np.load(filename).T
-		#sampling_rate != self.sampling_rate:
-		#	raise ValueError("{} SR doesn't match target {} SR".format(
-		#		sampling_rate, self.sampling_rate))
-
+		
 		# Take segment
 		mel_length = mel.shape[1]
 		if mel_length >= self.mel_segment_length:
@@ -141,7 +138,6 @@ class Mel2Samp(torch.utils.data.Dataset):
 			audio = torch.nn.functional.pad(audio, (0, self.segment_length - audio.size(0)), 'constant').data
 			mel = torch.from_numpy( mel )
 			mel = torch.nn.functional.pad(mel, (0, self.mel_segment_length - mel_length), 'constant').data
-			#########???????????????#######
 
 		return ( mel, audio)
 
