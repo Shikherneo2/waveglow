@@ -3,8 +3,8 @@
 	"fp16_run": true,
 	"output_directory": "checkpoints_gta_text2style_finetune",
 	"epochs": 1000,
-	"learning_rate": 5e-5,
-	"sigma": 1.0,
+	"learning_rate": 1e-4,
+	"sigma": 0.85,
 	"iters_per_checkpoint": 15000,
 	"batch_size": 6,
 	"seed": 1234,
@@ -14,7 +14,7 @@
 	},
 
 	"data_config": {
-		"training_files": "dataset/gta_waveglow_list.txt",
+		"training_files": "dataset/smaller_gta_list.txt",
 		"segment_length": 16128,
 		"sampling_rate": 22050,
 		"filter_length": 1024,

@@ -59,9 +59,9 @@ def load_checkpoint(checkpoint_path, model, optimizer, start_from_iter):
 	print( "Loaded checkpoint '{}' (iteration {})" .format( checkpoint_path, iteration ) )
 	return model, optimizer, iteration
 
+
 def save_checkpoint(model, optimizer, learning_rate, iteration, filepath):
-	print("Saving model and optimizer state at iteration {} to {}".format(
-		  iteration, filepath))
+	print( "Saving model and optimizer state at iteration {} to {}".format(iteration, filepath) )
 	model_for_saving = WaveGlow(**waveglow_config).cuda()
 	model_for_saving.load_state_dict(model.state_dict())
 	torch.save({'model': model_for_saving,
@@ -69,23 +69,21 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, filepath):
 				'optimizer': optimizer.state_dict(),
 				'learning_rate': learning_rate}, filepath)
 
+
 def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 		  sigma, iters_per_checkpoint, batch_size, seed, fp16_run,
 		  checkpoint_path, with_tensorboard, start_from):
+
 	torch.manual_seed(seed)
 	torch.cuda.manual_seed(seed)
-	#=====START: ADDED FOR DISTRIBUTED======
 	if num_gpus > 1:
 		init_distributed(rank, num_gpus, group_name, **dist_config)
-	#=====END:   ADDED FOR DISTRIBUTED======
 
 	criterion = WaveGlowLoss(sigma)
 	model = WaveGlow(**waveglow_config).cuda()
 
-	#=====START: ADDED FOR DISTRIBUTED======
 	if num_gpus > 1:
 		model = apply_gradient_allreduce(model)
-	#=====END:   ADDED FOR DISTRIBUTED======
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -101,16 +99,16 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 		iteration += 1  # next iteration is iteration + 1
 
 	trainset = Mel2Samp(**data_config)
-	# =====START: ADDED FOR DISTRIBUTED======
+	
 	train_sampler = DistributedSampler(trainset) if num_gpus > 1 else None
 	shuffle_param = False if num_gpus>1 else True
-	# =====END:   ADDED FOR DISTRIBUTED======
+	
 	train_loader = DataLoader(trainset, 
-										num_workers=3,
+										num_workers=2,
 										shuffle=shuffle_param,
 										sampler=train_sampler,
 										batch_size=batch_size,
-										pin_memory=True,
+										pin_memory=False,
 										drop_last=True)
 
 	# Get shared output_directory ready
@@ -124,9 +122,10 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 		logger = SummaryWriter(os.path.join(output_directory, 'logs'))
 
 	model.train()
-	epoch_offset = max(0, int(iteration / len(train_loader)))
+	epoch_offset = max( 0, int(iteration / len(train_loader)) )
+	
 	# ================ MAIN TRAINNIG LOOP! ===================
-	for epoch in range(epoch_offset, epoch_offset+epochs):
+	for epoch in range( epoch_offset, epoch_offset+epochs ):
 		print("Epoch: {}".format(epoch))
 		start = time.time()
 
@@ -150,6 +149,7 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 			else:
 				loss.backward()
 
+			torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
 			optimizer.step()
 
 			if iteration % 100== 0 and rank==0:
@@ -159,23 +159,18 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 			if with_tensorboard and rank == 0:
 				logger.add_scalar('training_loss', reduced_loss, i + len(train_loader) * epoch)
 
-			if (iteration % iters_per_checkpoint == 0):
+			if iteration % iters_per_checkpoint == 0:
 				if rank == 0:
-					checkpoint_path = "{}/waveglow_{}".format(
-						output_directory, iteration)
-					save_checkpoint(model, optimizer, learning_rate, iteration,
-									checkpoint_path)
+					checkpoint_path = "{}/waveglow_{}".format( output_directory, iteration )
+					save_checkpoint( model, optimizer, learning_rate, iteration, checkpoint_path )
 
 			iteration += 1
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-c', '--config', type=str,
-						help='JSON file for configuration' )
-	parser.add_argument('-r', '--rank', type=int, default=0,
-						help='rank of process for distributed' )
-	parser.add_argument('-g', '--group_name', type=str, default='',
-						help='name of group for distributed' )
+	parser.add_argument('-c', '--config', type=str, help='JSON file for configuration' )
+	parser.add_argument('-r', '--rank', type=int, default=0, help='rank of process for distributed' )
+	parser.add_argument('-g', '--group_name', type=str, default='', help='name of group for distributed' )
 	
 	# parser.add_argument('-o', '--output_dir', type=str )
 	# parser.add_argument('-p', '--checkpoint_path', type=str )
