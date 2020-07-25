@@ -27,6 +27,7 @@
 import argparse
 import json
 import os
+import sys
 import time
 import torch
 from tensorboardX import SummaryWriter
@@ -167,6 +168,7 @@ def train(num_gpus, rank, group_name, output_directory, epochs, learning_rate,
 			iteration += 1
 
 if __name__ == "__main__":
+	sys.path.insert(0,'/home/sdevgupta/mine/apex')
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-c', '--config', type=str, help='JSON file for configuration' )
 	parser.add_argument('-r', '--rank', type=int, default=0, help='rank of process for distributed' )

@@ -112,21 +112,21 @@ class Mel2Samp(torch.utils.data.Dataset):
 		mel = np.load(filename).T
 		
 		# Take segment
-		mel_length = mel.shape[1]
-		if mel_length >= self.mel_segment_length:
-			max_mel_start = max( 0, mel_length - self.mel_segment_length - 5 )
-			mel_start = random.randint(0, max_mel_start)
-			mel = torch.from_numpy(mel[ :,mel_start:mel_start+self.mel_segment_length ])
+		mel_length = mel.shape[1]-1
+		max_mel_start = max( 0, mel_length - self.mel_segment_length - 5 )
+		mel_start = random.randint( 0, max_mel_start )
+		mel = torch.from_numpy( mel[ :,mel_start:mel_start+self.mel_segment_length ] )
 
-			audio_start = mel_start*256
-			audio_end = audio_start + self.segment_length
-			audio = audio[ audio_start:audio_end ]
+		audio_start = mel_start*256
+		audio_end = audio_start + self.segment_length
+		audio = audio[ audio_start:audio_end ]
 
-		else:
-			mel = torch.from_numpy( mel )
-
-		audio = audio/abs(audio).max() * 0.5
-		audio = torch.nn.functional.pad( audio, (0, max(0,self.segment_length - int(audio.size(0)))), 'constant' ).data
+		#else:
+		#	mel = torch.from_numpy( mel )
+		# mel = mel[:,:self.mel_segment_length]
+		# audio = audio[:self.segment_length]
+		# audio = audio/abs(audio).max() * 0.5
+		#audio = torch.nn.functional.pad( audio, (0, max(0,self.segment_length - int(audio.size(0)))), 'constant' ).data
 		return ( mel, audio )
 
 	def __len__(self):

@@ -1,20 +1,20 @@
 {
 	"train_config": {
-	"fp16_run": true,
-	"output_directory": "checkpoints_gta_text2style_finetune",
-	"epochs": 1000,
-	"learning_rate": 1e-4,
-	"sigma": 0.85,
-	"iters_per_checkpoint": 15000,
-	"batch_size": 6,
-	"seed": 1234,
-	"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints_gta/waveglow_1860000",
-	"with_tensorboard": true,
-	"start_from":0
+		"fp16_run": true,
+		"output_directory": "checkpoints_gta_finetune_experiment_2",
+		"epochs": 1000,
+		"learning_rate": 1e-4,
+		"sigma": 0.85,
+		"iters_per_checkpoint": 15000,
+		"batch_size": 6,
+		"seed": 1234,
+		"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints_gta/waveglow_1860000",
+		"with_tensorboard": true,
+		"start_from":0
 	},
 
 	"data_config": {
-		"training_files": "dataset/smaller_gta_list.txt",
+		"training_files": "dataset/filtered_small_gta_list.txt",
 		"segment_length": 16128,
 		"sampling_rate": 22050,
 		"filter_length": 1024,

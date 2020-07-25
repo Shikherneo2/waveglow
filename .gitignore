@@ -1,3 +1,4 @@
+*.pickle
 tacotron2/
 tacotron2/*
 dataset
