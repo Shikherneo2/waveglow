@@ -4,11 +4,11 @@
 		"output_directory": "checkpoints_gta_finetune_experiment_2",
 		"epochs": 1000,
 		"learning_rate": 1e-4,
-		"sigma": 0.85,
+		"sigma": 1,
 		"iters_per_checkpoint": 15000,
 		"batch_size": 6,
 		"seed": 1234,
-		"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints_gta/waveglow_1860000",
+		"checkpoint_path":"/home/sdevgupta/mine/waveglow/checkpoints_gta_finetune_experiment_2/waveglow_2100000",
 		"with_tensorboard": true,
 		"start_from":0
 	},
@@ -37,7 +37,7 @@
 		"n_early_size": 2,
 		"WN_config": {
 			"n_layers": 8,
-			"n_channels": 256,
+			"n_channels": 512,
 			"kernel_size": 3
 		}
 	}

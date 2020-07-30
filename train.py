@@ -44,7 +44,7 @@ from mel2samp import Mel2Samp
 def load_checkpoint(checkpoint_path, model, optimizer, start_from_iter):
 	assert os.path.isfile(checkpoint_path)
 	checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
-	# print(checkpoint_dict.keys())
+	
 	if( "optimizer" not in checkpoint_dict.keys() ):
 		optimizer.load_state_dict(checkpoint_dict['optimizer'])
 	
@@ -174,10 +174,6 @@ if __name__ == "__main__":
 	parser.add_argument('-r', '--rank', type=int, default=0, help='rank of process for distributed' )
 	parser.add_argument('-g', '--group_name', type=str, default='', help='name of group for distributed' )
 	
-	# parser.add_argument('-o', '--output_dir', type=str )
-	# parser.add_argument('-p', '--checkpoint_path', type=str )
-	# parser.add_argument('-i', '--start_from', type=int )
-	
 	args = parser.parse_args()
 
 	# Parse configs.  Globals nicer in this case
@@ -185,13 +181,6 @@ if __name__ == "__main__":
 		data = f.read()
 	config = json.loads(data)
 	train_config = config["train_config"]
-	
-	# if( args.output_dir ):
-		# train_config["output_directory"] = args.output_dir
-	# if( args.checkpoint_path ):
-		# train_config["checkpoint_path"] = args.checkpoint_path
-	# if(args.start_from):
-		# train_config["start_from"] = args.start_from
 	
 	global data_config
 	data_config = config["data_config"]

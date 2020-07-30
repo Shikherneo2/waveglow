@@ -119,7 +119,9 @@ class Mel2Samp(torch.utils.data.Dataset):
 
 		audio_start = mel_start*256
 		audio_end = audio_start + self.segment_length
-		audio = audio[ audio_start:audio_end ]
+
+		# catheryin byers has a high of -1.0387784. Normalize to (-1,1)
+		audio = audio[ audio_start:audio_end ]/1.0387784
 
 		#else:
 		#	mel = torch.from_numpy( mel )

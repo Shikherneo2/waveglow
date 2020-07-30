@@ -1,3 +1,3 @@
 python inference.py -f /home/sdevgupta/mels_latest_stable_text2style.txt \
--w /home/sdevgupta/mine/waveglow/checkpoints_gta_text2style_finetune/waveglow_1935000 \
--o /home/sdevgupta/mine/waveglow_exps/text2style_gta_trained_waveglow_1935000 -s 0.6
+-w /home/sdevgupta/mine/waveglow/checkpoints_gta_text2style_finetune/waveglow_2085000 \
+-o /home/sdevgupta/mine/waveglow_exps/text2style_gta_trained_waveglow_2085000 -s 0.6
